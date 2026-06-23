@@ -6,7 +6,9 @@ using Scalar.AspNetCore;
 using RentasCortas.Common.Middleware;
 using RentasCortas.Common.Security;
 using RentasCortas.Data;
+using RentasCortas.Common.Storage;
 using RentasCortas.Features.Auth;
+using RentasCortas.Features.Inmuebles;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -38,6 +40,8 @@ builder.Services.AddSingleton<JwtHelper>();
 
 // --- Features ---
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IInmueblesService, InmueblesService>();
+builder.Services.AddSingleton<IFileStorageService, FileStorageService>();
 
 // --- Controllers ---
 builder.Services.AddControllers();
@@ -86,6 +90,7 @@ if (app.Environment.IsDevelopment())
     });
 }
 
+app.UseStaticFiles();
 app.UseAuthentication();
 app.UseAuthorization();
 
