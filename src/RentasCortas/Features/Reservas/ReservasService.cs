@@ -22,7 +22,7 @@ public class ReservasService : IReservasService
 
             var inmueble = await _context.Inmuebles
                 .FirstOrDefaultAsync(i => i.Id == dto.InmuebleId && i.Status == "active")
-                ?? throw new KeyNotFoundException("Inmueble no encontrado o no disponible");
+                ?? throw new KeyNotFoundException($"El inmueble con id {dto.InmuebleId} no existe o no está disponible");
 
             if (inmueble.OwnerId == guestId)
                 throw new ArgumentException("No puedes reservar tu propio inmueble");
@@ -59,13 +59,13 @@ public class ReservasService : IReservasService
                 .Include(r => r.Inmueble)
                 .Include(r => r.Guest)
                 .FirstOrDefaultAsync(r => r.Id == reservaId)
-                ?? throw new KeyNotFoundException("Reserva no encontrada");
+                ?? throw new KeyNotFoundException($"La reserva con id {reservaId} no existe");
 
             if (reserva.Inmueble.OwnerId != ownerId)
-                throw new UnauthorizedAccessException("No tienes permiso para confirmar esta reserva");
+                throw new UnauthorizedAccessException("No tienes permisos para realizar esta acción");
 
             if (reserva.Status != "pending")
-                throw new ArgumentException("Solo se pueden confirmar reservas en estado pending");
+                throw new ArgumentException($"Solo se pueden confirmar reservas en estado pending. Estado actual: {reserva.Status}");
 
             // KYC obligatorio solo para la primera reserva del guest
             var hasCompletedReservations = await _context.Reservas
@@ -74,7 +74,7 @@ public class ReservasService : IReservasService
                     && (r.Status == "confirmed" || r.Status == "completed"));
 
             if (!hasCompletedReservations && reserva.Guest.KycStatus != "approved")
-                throw new ArgumentException("El guest debe completar la verificación KYC antes de su primera reserva");
+                throw new ArgumentException("Debes completar la validación de identidad antes de realizar tu primera reserva");
 
             // Anti double-booking
             var hasConflict = await _context.Reservas
@@ -85,7 +85,7 @@ public class ReservasService : IReservasService
                     && r.CheckOut > reserva.CheckIn);
 
             if (hasConflict)
-                throw new InvalidOperationException("Ya existe una reserva confirmada en ese rango de fechas");
+                throw new InvalidOperationException("Ya existe una reserva confirmada para este inmueble en las fechas seleccionadas");
 
             var previousStatus = reserva.Status;
             reserva.Status = "confirmed";
@@ -115,16 +115,16 @@ public class ReservasService : IReservasService
             var reserva = await _context.Reservas
                 .Include(r => r.Inmueble)
                 .FirstOrDefaultAsync(r => r.Id == reservaId)
-                ?? throw new KeyNotFoundException("Reserva no encontrada");
+                ?? throw new KeyNotFoundException($"La reserva con id {reservaId} no existe");
 
             var isGuest = reserva.GuestId == userId;
             var isOwner = reserva.Inmueble.OwnerId == userId;
 
             if (!isGuest && !isOwner)
-                throw new UnauthorizedAccessException("No tienes permiso para cancelar esta reserva");
+                throw new UnauthorizedAccessException("No tienes permisos para realizar esta acción");
 
             if (reserva.Status == "cancelled" || reserva.Status == "completed")
-                throw new ArgumentException("No se puede cancelar una reserva en estado " + reserva.Status);
+                throw new ArgumentException($"No se puede cancelar una reserva en estado {reserva.Status}");
 
             var previousStatus = reserva.Status;
             reserva.Status = "cancelled";
@@ -188,13 +188,13 @@ public class ReservasService : IReservasService
                 .Include(r => r.Inmueble)
                 .Include(r => r.Guest)
                 .FirstOrDefaultAsync(r => r.Id == reservaId)
-                ?? throw new KeyNotFoundException("Reserva no encontrada");
+                ?? throw new KeyNotFoundException($"La reserva con id {reservaId} no existe");
 
             var isGuest = reserva.GuestId == userId;
             var isOwner = reserva.Inmueble.OwnerId == userId;
 
             if (!isGuest && !isOwner)
-                throw new UnauthorizedAccessException("No tienes permiso para ver esta reserva");
+                throw new UnauthorizedAccessException("No tienes permisos para realizar esta acción");
 
             return MapToResponse(reserva);
         }

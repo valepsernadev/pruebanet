@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using RentasCortas.Common.Responses;
 
 namespace RentasCortas.Features.Reservas;
 
@@ -20,9 +21,13 @@ public class ReservasController : ControllerBase
     [Authorize(Roles = "guest")]
     public async Task<IActionResult> Create([FromBody] CreateReservaDTO dto)
     {
+        var role = GetUserRole();
+        if (role != "guest")
+            return StatusCode(403, new ApiResponse("Solo los huéspedes pueden crear reservas. Inicia sesión con una cuenta de tipo guest.", 403));
+
         var guestId = GetUserId();
         var result = await _reservasService.CreateAsync(guestId, dto);
-        return Created(string.Empty, result);
+        return Created(string.Empty, new ApiResponse<ReservaResponseDTO>("Reserva creada exitosamente", 201, result));
     }
 
     [HttpPatch("{id}/confirm")]
@@ -31,7 +36,7 @@ public class ReservasController : ControllerBase
     {
         var ownerId = GetUserId();
         var result = await _reservasService.ConfirmAsync(ownerId, id);
-        return Ok(result);
+        return Ok(new ApiResponse<ReservaResponseDTO>("Reserva confirmada. Check-in: 14:00, Check-out: 12:00", 200, result));
     }
 
     [HttpPatch("{id}/cancel")]
@@ -39,7 +44,7 @@ public class ReservasController : ControllerBase
     {
         var userId = GetUserId();
         var result = await _reservasService.CancelAsync(userId, id);
-        return Ok(result);
+        return Ok(new ApiResponse<ReservaResponseDTO>("Reserva cancelada exitosamente", 200, result));
     }
 
     [HttpGet]
@@ -48,7 +53,7 @@ public class ReservasController : ControllerBase
         var userId = GetUserId();
         var role = GetUserRole();
         var result = await _reservasService.ListByUserAsync(userId, role);
-        return Ok(result);
+        return Ok(new ApiResponse<List<ReservaListResponseDTO>>("Reservas obtenidas exitosamente", 200, result));
     }
 
     [HttpGet("{id}")]
@@ -56,13 +61,13 @@ public class ReservasController : ControllerBase
     {
         var userId = GetUserId();
         var result = await _reservasService.GetByIdAsync(userId, id);
-        return Ok(result);
+        return Ok(new ApiResponse<ReservaResponseDTO>("Reserva obtenida exitosamente", 200, result));
     }
 
     private Guid GetUserId()
     {
         var claim = User.FindFirst(ClaimTypes.NameIdentifier)
-            ?? throw new UnauthorizedAccessException("Token inválido");
+            ?? throw new UnauthorizedAccessException("No tienes permisos para realizar esta acción");
         return Guid.Parse(claim.Value);
     }
 

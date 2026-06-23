@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using RentasCortas.Common.Responses;
 
 namespace RentasCortas.Features.Inmuebles;
 
@@ -19,14 +20,14 @@ public class InmueblesController : ControllerBase
     public async Task<IActionResult> List([FromQuery] InmuebleFilterDTO filter)
     {
         var result = await _inmueblesService.ListAsync(filter);
-        return Ok(result);
+        return Ok(new ApiResponse<List<InmuebleListResponseDTO>>("Inmuebles obtenidos exitosamente", 200, result));
     }
 
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(Guid id)
     {
         var result = await _inmueblesService.GetByIdAsync(id);
-        return Ok(result);
+        return Ok(new ApiResponse<InmuebleResponseDTO>("Inmueble obtenido exitosamente", 200, result));
     }
 
     [HttpPost]
@@ -35,7 +36,7 @@ public class InmueblesController : ControllerBase
     {
         var ownerId = GetUserId();
         var result = await _inmueblesService.CreateAsync(ownerId, dto);
-        return Created(string.Empty, result);
+        return Created(string.Empty, new ApiResponse<InmuebleResponseDTO>("Inmueble creado exitosamente", 201, result));
     }
 
     [HttpPut("{id}")]
@@ -44,7 +45,7 @@ public class InmueblesController : ControllerBase
     {
         var ownerId = GetUserId();
         var result = await _inmueblesService.UpdateAsync(ownerId, id, dto);
-        return Ok(result);
+        return Ok(new ApiResponse<InmuebleResponseDTO>("Inmueble actualizado exitosamente", 200, result));
     }
 
     [HttpDelete("{id}")]
@@ -53,7 +54,7 @@ public class InmueblesController : ControllerBase
     {
         var ownerId = GetUserId();
         await _inmueblesService.SoftDeleteAsync(ownerId, id);
-        return Ok(new { message = "Inmueble eliminado" });
+        return Ok(new ApiResponse("Inmueble eliminado exitosamente", 200));
     }
 
     [HttpPost("{id}/images")]
@@ -62,7 +63,7 @@ public class InmueblesController : ControllerBase
     {
         var ownerId = GetUserId();
         var result = await _inmueblesService.AddImageAsync(ownerId, id, file);
-        return Created(string.Empty, result);
+        return Created(string.Empty, new ApiResponse<ImageResponseDTO>("Imagen subida exitosamente", 201, result));
     }
 
     [HttpDelete("{id}/images/{imageId}")]
@@ -71,13 +72,13 @@ public class InmueblesController : ControllerBase
     {
         var ownerId = GetUserId();
         await _inmueblesService.RemoveImageAsync(ownerId, id, imageId);
-        return Ok(new { message = "Imagen eliminada" });
+        return Ok(new ApiResponse("Imagen eliminada exitosamente", 200));
     }
 
     private Guid GetUserId()
     {
         var claim = User.FindFirst(ClaimTypes.NameIdentifier)
-            ?? throw new UnauthorizedAccessException("Token inválido");
+            ?? throw new UnauthorizedAccessException("No tienes permisos para realizar esta acción");
         return Guid.Parse(claim.Value);
     }
 }

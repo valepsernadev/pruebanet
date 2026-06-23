@@ -5,7 +5,8 @@ using RentasCortas.Models;
 
 namespace RentasCortas.Features.Inmuebles;
 
-public class InmueblesService : IInmueblesService
+public class 
+    InmueblesService : IInmueblesService
 {
     private static readonly string[] ValidStatuses = ["active", "inactive"];
 
@@ -92,7 +93,7 @@ public class InmueblesService : IInmueblesService
                 .Include(i => i.Owner)
                 .Include(i => i.Images)
                 .FirstOrDefaultAsync(i => i.Id == inmuebleId)
-                ?? throw new KeyNotFoundException("Inmueble no encontrado");
+                ?? throw new KeyNotFoundException($"El inmueble con id {inmuebleId} no existe");
 
             return MapToResponse(inmueble);
         }
@@ -185,7 +186,7 @@ public class InmueblesService : IInmueblesService
 
             var image = await _context.PropertyImages
                 .FirstOrDefaultAsync(img => img.Id == imageId && img.InmuebleId == inmuebleId)
-                ?? throw new KeyNotFoundException("Imagen no encontrada");
+                ?? throw new KeyNotFoundException($"La imagen con id {imageId} no existe en este inmueble");
 
             _storage.DeleteFile(image.ImageUrl);
             _context.PropertyImages.Remove(image);
@@ -201,10 +202,10 @@ public class InmueblesService : IInmueblesService
     {
         var inmueble = await _context.Inmuebles
             .FirstOrDefaultAsync(i => i.Id == inmuebleId)
-            ?? throw new KeyNotFoundException("Inmueble no encontrado");
+            ?? throw new KeyNotFoundException($"El inmueble con id {inmuebleId} no existe");
 
         if (inmueble.OwnerId != ownerId)
-            throw new UnauthorizedAccessException("No tienes permiso para modificar este inmueble");
+            throw new UnauthorizedAccessException("No tienes permisos para realizar esta acción");
 
         return inmueble;
     }

@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text.Json;
+using RentasCortas.Common.Responses;
 
 namespace RentasCortas.Common.Middleware;
 
@@ -32,23 +33,22 @@ public class ErrorHandlingMiddleware
         var statusCode = exception switch
         {
             KeyNotFoundException => HttpStatusCode.NotFound,
-            UnauthorizedAccessException => HttpStatusCode.Unauthorized,
+            UnauthorizedAccessException => HttpStatusCode.Forbidden,
             ArgumentException => HttpStatusCode.BadRequest,
             InvalidOperationException => HttpStatusCode.Conflict,
             _ => HttpStatusCode.InternalServerError
         };
 
-        var response = new
-        {
-            error = statusCode == HttpStatusCode.InternalServerError
-                ? "Error interno del servidor"
-                : exception.Message,
-            statusCode = (int)statusCode
-        };
+        var message = statusCode == HttpStatusCode.InternalServerError
+            ? "Error interno del servidor"
+            : exception.Message;
+
+        var response = new ApiResponse(message, (int)statusCode);
 
         context.Response.ContentType = "application/json";
         context.Response.StatusCode = (int)statusCode;
 
-        return context.Response.WriteAsync(JsonSerializer.Serialize(response));
+        var jsonOptions = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+        return context.Response.WriteAsync(JsonSerializer.Serialize(response, jsonOptions));
     }
 }
