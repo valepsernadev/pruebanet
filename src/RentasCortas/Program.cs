@@ -9,6 +9,7 @@ using RentasCortas.Data;
 using RentasCortas.Common.Storage;
 using RentasCortas.Features.Auth;
 using RentasCortas.Features.Inmuebles;
+using RentasCortas.Features.Reservas;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -42,6 +43,7 @@ builder.Services.AddSingleton<JwtHelper>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IInmueblesService, InmueblesService>();
 builder.Services.AddSingleton<IFileStorageService, FileStorageService>();
+builder.Services.AddScoped<IReservasService, ReservasService>();
 
 // --- Controllers ---
 builder.Services.AddControllers();
