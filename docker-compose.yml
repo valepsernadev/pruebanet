@@ -4,7 +4,7 @@ services:
     environment:
       POSTGRES_DB: rentascortas
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASSWORD: 6KeVSs4JKn9E2qsu2akA
     ports:
       - "5432:5432"
     volumes:
@@ -21,7 +21,7 @@ services:
       - db
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=rentascortas;Username=postgres;Password=postgres
+      - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=rentascortas;Username=postgres;Password=6KeVSs4JKn9E2qsu2akA
 
 volumes:
   pgdata:
