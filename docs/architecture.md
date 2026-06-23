@@ -1,6 +1,6 @@
 docs/architecture.md — Arquitectura del Proyecto
 
-1. Estilo arquitectónico
+## 1. Estilo arquitectónico
 
 Vertical Slice Architecture
 
@@ -12,7 +12,7 @@ Regla de oro: si un archivo solo lo usa una feature, vive dentro de esa feature.
 Si dos o más features lo necesitan, va en Common/.
 
 
-2. Estructura de carpetas
+## 2. Estructura de carpetas
 
 src/
 └── RentasCortas/
@@ -82,7 +82,7 @@ src/
 └── appsettings.json
 
 
-3. Flujo de una petición
+## 3. Flujo de una petición
 
 Request HTTP
 → Controller        (recibe DTO, valida formato, llama al Service)
@@ -95,7 +95,7 @@ El Controller nunca contiene lógica de negocio.
 El Service nunca retorna un Model directamente — siempre mapea a DTO.
 
 
-4. Modelos de base de datos
+## 4. Modelos de base de datos
 
 usuarios
 
@@ -210,7 +210,7 @@ created_at TIMESTAMP DEFAULT NOW()
 );
 
 
-5. Notificaciones — dos canales, un contrato
+## 5. Notificaciones — dos canales, un contrato
 
 Common/Notifications/
 ├── INotificationService.cs       ← contrato único que llaman las features
@@ -227,7 +227,7 @@ Validación KYC → in_app
 
 
 
-6. KYC — flujo de validación
+## 6. KYC — flujo de validación
 
 Guest sube imagen
 → KYCController recibe el archivo
@@ -241,7 +241,7 @@ El documento de identidad nunca se persiste en base de datos.
 Se procesa en memoria, se extrae la información, y se elimina.
 
 
-7. Reglas de negocio críticas
+## 7. Reglas de negocio críticas
 
 
 Double-booking: antes de confirmar una reserva, verificar que no existan reservas en estado confirmed para el mismo inmueble en el rango de fechas solicitado
@@ -252,7 +252,7 @@ Autenticación diferida: el catálogo y filtros son públicos — solo se requie
 
 
 
-8. Agregar una nueva feature
+## 8. Agregar una nueva feature
 
 
 Crear carpeta Features/NuevaFeature/
