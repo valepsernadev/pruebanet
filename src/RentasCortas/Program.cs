@@ -11,6 +11,8 @@ using RentasCortas.Features.Auth;
 using RentasCortas.Features.Inmuebles;
 using RentasCortas.Features.Reservas;
 using RentasCortas.Features.Favoritos;
+using RentasCortas.Features.KYC;
+using RentasCortas.Common.Notifications;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -47,6 +49,9 @@ builder.Services.AddScoped<IInmueblesService, InmueblesService>();
 builder.Services.AddSingleton<IFileStorageService, FileStorageService>();
 builder.Services.AddScoped<IReservasService, ReservasService>();
 builder.Services.AddScoped<IFavoritosService, FavoritosService>();
+builder.Services.AddHttpClient();
+builder.Services.AddScoped<INotificationService, InAppNotificationService>();
+builder.Services.AddScoped<IKYCService, KYCService>();
 
 // --- Controllers ---
 builder.Services.AddControllers();
