@@ -19,14 +19,16 @@ public class InmueblesController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> List([FromQuery] InmuebleFilterDTO filter)
     {
-        var result = await _inmueblesService.ListAsync(filter);
+        var (userId, role) = GetOptionalAuth();
+        var result = await _inmueblesService.ListAsync(filter, userId, role);
         return Ok(new ApiResponse<List<InmuebleListResponseDTO>>("Inmuebles obtenidos exitosamente", 200, result));
     }
 
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(Guid id)
     {
-        var result = await _inmueblesService.GetByIdAsync(id);
+        var (userId, role) = GetOptionalAuth();
+        var result = await _inmueblesService.GetByIdAsync(id, userId, role);
         return Ok(new ApiResponse<InmuebleResponseDTO>("Inmueble obtenido exitosamente", 200, result));
     }
 
@@ -80,5 +82,14 @@ public class InmueblesController : ControllerBase
         var claim = User.FindFirst(ClaimTypes.NameIdentifier)
             ?? throw new UnauthorizedAccessException("No tienes permisos para realizar esta acción");
         return Guid.Parse(claim.Value);
+    }
+
+    private (Guid? userId, string? role) GetOptionalAuth()
+    {
+        var idClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        var roleClaim = User.FindFirst(ClaimTypes.Role);
+
+        if (idClaim == null) return (null, null);
+        return (Guid.Parse(idClaim.Value), roleClaim?.Value);
     }
 }
