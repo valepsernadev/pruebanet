@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text.Json;
+using RentasCortas.Common.Exceptions;
 using RentasCortas.Common.Responses;
 
 namespace RentasCortas.Common.Middleware;
@@ -32,6 +33,7 @@ public class ErrorHandlingMiddleware
     {
         var statusCode = exception switch
         {
+            ServiceUnavailableException => HttpStatusCode.ServiceUnavailable,
             KeyNotFoundException => HttpStatusCode.NotFound,
             UnauthorizedAccessException => HttpStatusCode.Forbidden,
             ArgumentException => HttpStatusCode.BadRequest,
