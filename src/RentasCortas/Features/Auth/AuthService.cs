@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using RentasCortas.Common.Notifications;
 using RentasCortas.Common.Security;
 using RentasCortas.Data;
 using RentasCortas.Models;
@@ -11,11 +12,13 @@ public class AuthService : IAuthService
 
     private readonly AppDbContext _context;
     private readonly JwtHelper _jwtHelper;
+    private readonly INotificationService _notificationService;
 
-    public AuthService(AppDbContext context, JwtHelper jwtHelper)
+    public AuthService(AppDbContext context, JwtHelper jwtHelper, INotificationService notificationService)
     {
         _context = context;
         _jwtHelper = jwtHelper;
+        _notificationService = notificationService;
     }
 
     public async Task<AuthResponseDTO> RegisterAsync(RegisterDTO dto)
@@ -44,6 +47,11 @@ public class AuthService : IAuthService
             await _context.SaveChangesAsync();
 
             var token = _jwtHelper.GenerateToken(usuario.Id, usuario.Email, usuario.Role);
+
+            await _notificationService.SendEmailAsync(
+                usuario.Id,
+                "Bienvenido a RentasCortas",
+                $"Hola {usuario.FullName}, tu cuenta ha sido creada exitosamente. ¡Bienvenido a RentasCortas!");
 
             return new AuthResponseDTO
             {
