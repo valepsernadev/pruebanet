@@ -1,63 +1,81 @@
-using MailKit.Net.Smtp;
-using MimeKit;
+using System.Text;
+using System.Text.Json;
 
 namespace RentasCortas.Common.Notifications;
 
 public class EmailNotificationService
 {
+    private const string ResendApiUrl = "https://api.resend.com/emails";
+    private const string FromAddress = "RentasCortas <onboarding@resend.dev>";
+
     private readonly IConfiguration _configuration;
     private readonly ILogger<EmailNotificationService> _logger;
+    private readonly IHttpClientFactory _httpClientFactory;
 
-    public EmailNotificationService(IConfiguration configuration, ILogger<EmailNotificationService> logger)
+    public EmailNotificationService(
+        IConfiguration configuration,
+        ILogger<EmailNotificationService> logger,
+        IHttpClientFactory httpClientFactory)
     {
         _configuration = configuration;
         _logger = logger;
+        _httpClientFactory = httpClientFactory;
     }
 
     public async Task SendAsync(string toEmail, string subject, string body)
     {
-        var host = _configuration["Smtp:Host"];
-        var portStr = _configuration["Smtp:Port"];
-        var username = _configuration["Smtp:Username"];
-        var password = _configuration["Smtp:Password"];
-        var fromEmail = _configuration["Smtp:FromEmail"];
-        var fromName = _configuration["Smtp:FromName"] ?? "RentasCortas";
+        var apiKey = _configuration["Resend:ApiKey"];
 
-        if (string.IsNullOrEmpty(host) || string.IsNullOrEmpty(fromEmail))
+        if (string.IsNullOrEmpty(apiKey))
         {
             _logger.LogWarning(
-                "SMTP no configurado (Host={Host}, FromEmail={FromEmail}). No se enviará el email a {ToEmail} con asunto: {Subject}",
-                host ?? "(vacío)", fromEmail ?? "(vacío)", toEmail, subject);
+                "Resend API Key no configurada. No se enviará el email a {ToEmail} con asunto: {Subject}",
+                toEmail, subject);
             return;
         }
 
-        if (!int.TryParse(portStr, out var port))
-            port = 587;
+        var payload = new
+        {
+            from = FromAddress,
+            to = new[] { toEmail },
+            subject,
+            html = body
+        };
+
+        var jsonContent = new StringContent(
+            JsonSerializer.Serialize(payload),
+            Encoding.UTF8,
+            "application/json");
 
         try
         {
-            _logger.LogInformation("Intentando enviar email a {ToEmail} via {Host}:{Port}", toEmail, host, port);
+            _logger.LogInformation("Enviando email a {ToEmail} via Resend API", toEmail);
 
-            var message = new MimeMessage();
-            message.From.Add(new MailboxAddress(fromName, fromEmail));
-            message.To.Add(new MailboxAddress("", toEmail));
-            message.Subject = subject;
-            message.Body = new TextPart("plain") { Text = body };
+            var client = _httpClientFactory.CreateClient();
+            client.DefaultRequestHeaders.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", apiKey);
 
-            using var client = new SmtpClient();
-            await client.ConnectAsync(host, port, MailKit.Security.SecureSocketOptions.StartTls);
+            var response = await client.PostAsync(ResendApiUrl, jsonContent);
+            var responseBody = await response.Content.ReadAsStringAsync();
 
-            if (!string.IsNullOrEmpty(username) && !string.IsNullOrEmpty(password))
-                await client.AuthenticateAsync(username, password);
-
-            await client.SendAsync(message);
-            await client.DisconnectAsync(true);
-
-            _logger.LogInformation("Email enviado exitosamente a {ToEmail}", toEmail);
+            if (response.IsSuccessStatusCode)
+            {
+                _logger.LogInformation(
+                    "Email enviado exitosamente a {ToEmail}. Respuesta: {Response}",
+                    toEmail, responseBody);
+            }
+            else
+            {
+                _logger.LogError(
+                    "Error al enviar email a {ToEmail}. Status: {StatusCode}, Respuesta: {Response}",
+                    toEmail, (int)response.StatusCode, responseBody);
+            }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error al enviar email a {ToEmail} via {Host}:{Port}: {Message}", toEmail, host, port, ex.Message);
+            _logger.LogError(ex,
+                "Error de conexión al enviar email a {ToEmail} via Resend: {Message}",
+                toEmail, ex.Message);
         }
     }
 }

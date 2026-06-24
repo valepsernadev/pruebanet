@@ -22,6 +22,8 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=rentascortas;Username=postgres;Password=6KeVSs4JKn9E2qsu2akA
+    volumes:
+      - ./uploads:/app/wwwroot/uploads
 
 volumes:
   pgdata:
