@@ -15,6 +15,7 @@ using RentasCortas.Features.KYC;
 using RentasCortas.Features.Notificaciones;
 using RentasCortas.Common.Notifications;
 using RentasCortas.Common.Background;
+using RentasCortas.Features.Dashboard;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -57,6 +58,7 @@ builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IKYCService, KYCService>();
 builder.Services.AddScoped<INotificacionesService, NotificacionesService>();
 builder.Services.AddHostedService<CheckoutReminderService>();
+builder.Services.AddScoped<IDashboardService, DashboardService>();
 
 // --- Controllers ---
 builder.Services.AddControllers();
