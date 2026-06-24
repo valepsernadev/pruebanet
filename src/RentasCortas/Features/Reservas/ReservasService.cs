@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using RentasCortas.Common.Notifications;
 using RentasCortas.Data;
 using RentasCortas.Models;
 
@@ -7,10 +8,12 @@ namespace RentasCortas.Features.Reservas;
 public class ReservasService : IReservasService
 {
     private readonly AppDbContext _context;
+    private readonly INotificationService _notificationService;
 
-    public ReservasService(AppDbContext context)
+    public ReservasService(AppDbContext context, INotificationService notificationService)
     {
         _context = context;
+        _notificationService = notificationService;
     }
 
     public async Task<ReservaResponseDTO> CreateAsync(Guid guestId, CreateReservaDTO dto)
@@ -98,6 +101,11 @@ public class ReservasService : IReservasService
             });
 
             await _context.SaveChangesAsync();
+
+            var confirmMessage = $"Tu reserva en \"{reserva.Inmueble.Title}\" del {reserva.CheckIn} al {reserva.CheckOut} ha sido confirmada. Check-in: 14:00, Check-out: 12:00.";
+
+            await _notificationService.SendInAppAsync(reserva.GuestId, "reservation_confirmed", confirmMessage);
+            await _notificationService.SendEmailAsync(reserva.GuestId, "Reserva Confirmada", confirmMessage);
 
             return await GetByIdInternalAsync(reserva.Id);
         }

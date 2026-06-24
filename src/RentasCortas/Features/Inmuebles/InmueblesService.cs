@@ -6,6 +6,8 @@ using RentasCortas.Models;
 namespace RentasCortas.Features.Inmuebles;
 
 public class 
+    
+    
     InmueblesService : IInmueblesService
 {
     private static readonly string[] ValidStatuses = ["active", "inactive"];
