@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using RentasCortas.Common.Exceptions;
 using RentasCortas.Common.Notifications;
 using RentasCortas.Common.Security;
 using RentasCortas.Data;
@@ -32,7 +33,7 @@ public class AuthService : IAuthService
                 .AnyAsync(u => u.Email == dto.Email);
 
             if (emailExists)
-                throw new ArgumentException("El email ya está registrado");
+                throw new ConflictException("El email ya está registrado");
 
             var usuario = new Usuario
             {
@@ -62,11 +63,7 @@ public class AuthService : IAuthService
                 Token = token
             };
         }
-        catch (ArgumentException)
-        {
-            throw;
-        }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not ArgumentException and not ConflictException)
         {
             throw new InvalidOperationException("Error al registrar el usuario", ex);
         }
@@ -78,10 +75,10 @@ public class AuthService : IAuthService
         {
             var usuario = await _context.Usuarios
                 .FirstOrDefaultAsync(u => u.Email == dto.Email)
-                ?? throw new KeyNotFoundException("Credenciales inválidas");
+                ?? throw new AuthenticationFailedException("Credenciales inválidas");
 
             if (!BCrypt.Net.BCrypt.Verify(dto.Password, usuario.PasswordHash))
-                throw new KeyNotFoundException("Credenciales inválidas");
+                throw new AuthenticationFailedException("Credenciales inválidas");
 
             var token = _jwtHelper.GenerateToken(usuario.Id, usuario.Email, usuario.Role);
 
@@ -94,11 +91,7 @@ public class AuthService : IAuthService
                 Token = token
             };
         }
-        catch (KeyNotFoundException)
-        {
-            throw;
-        }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not AuthenticationFailedException)
         {
             throw new InvalidOperationException("Error al iniciar sesión", ex);
         }

@@ -34,10 +34,11 @@ public class ErrorHandlingMiddleware
         var statusCode = exception switch
         {
             ServiceUnavailableException => HttpStatusCode.ServiceUnavailable,
+            ConflictException => HttpStatusCode.Conflict,
+            AuthenticationFailedException => HttpStatusCode.Unauthorized,
             KeyNotFoundException => HttpStatusCode.NotFound,
             UnauthorizedAccessException => HttpStatusCode.Forbidden,
             ArgumentException => HttpStatusCode.BadRequest,
-            InvalidOperationException => HttpStatusCode.Conflict,
             _ => HttpStatusCode.InternalServerError
         };
 

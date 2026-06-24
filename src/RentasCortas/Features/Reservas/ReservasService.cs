@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using RentasCortas.Common.Exceptions;
 using RentasCortas.Common.Notifications;
 using RentasCortas.Data;
 using RentasCortas.Models;
@@ -20,8 +21,19 @@ public class ReservasService : IReservasService
     {
         try
         {
-            if (dto.CheckIn >= dto.CheckOut)
-                throw new ArgumentException("La fecha de check-in debe ser anterior a la de check-out");
+            var today = DateOnly.FromDateTime(DateTime.UtcNow);
+
+            if (dto.CheckIn < today)
+                throw new ArgumentException("La fecha de check-in no puede ser en el pasado");
+
+            if (dto.CheckIn < today.AddDays(2))
+                throw new ArgumentException("La reserva debe hacerse con al menos 2 días de antelación");
+
+            if (dto.CheckOut <= dto.CheckIn)
+                throw new ArgumentException("La fecha de check-out debe ser posterior al check-in");
+
+            if (dto.CheckOut.DayNumber - dto.CheckIn.DayNumber > 5)
+                throw new ArgumentException("La estadía máxima permitida es de 5 noches");
 
             var inmueble = await _context.Inmuebles
                 .FirstOrDefaultAsync(i => i.Id == dto.InmuebleId && i.Status == "active")
@@ -88,7 +100,7 @@ public class ReservasService : IReservasService
                     && r.CheckOut > reserva.CheckIn);
 
             if (hasConflict)
-                throw new InvalidOperationException("Ya existe una reserva confirmada para este inmueble en las fechas seleccionadas");
+                throw new ConflictException("Ya existe una reserva confirmada para este inmueble en las fechas seleccionadas");
 
             var previousStatus = reserva.Status;
             reserva.Status = "confirmed";
@@ -110,7 +122,7 @@ public class ReservasService : IReservasService
             return await GetByIdInternalAsync(reserva.Id);
         }
         catch (Exception ex) when (ex is not ArgumentException and not KeyNotFoundException
-            and not UnauthorizedAccessException and not InvalidOperationException)
+            and not UnauthorizedAccessException and not ConflictException)
         {
             throw new InvalidOperationException("Error al confirmar la reserva", ex);
         }

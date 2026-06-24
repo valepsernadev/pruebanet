@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using RentasCortas.Common.Exceptions;
 using RentasCortas.Data;
 using RentasCortas.Models;
 
@@ -26,7 +27,7 @@ public class FavoritosService : IFavoritosService
                 .AnyAsync(f => f.GuestId == guestId && f.InmuebleId == inmuebleId);
 
             if (exists)
-                throw new InvalidOperationException("Este inmueble ya se encuentra en tus favoritos");
+                throw new ConflictException("Este inmueble ya se encuentra en tus favoritos");
 
             var favorito = new Favorito
             {
@@ -39,7 +40,7 @@ public class FavoritosService : IFavoritosService
 
             return MapToDTO(favorito, inmueble);
         }
-        catch (Exception ex) when (ex is not KeyNotFoundException and not InvalidOperationException)
+        catch (Exception ex) when (ex is not KeyNotFoundException and not ConflictException)
         {
             throw new InvalidOperationException("Error al agregar el inmueble a favoritos", ex);
         }

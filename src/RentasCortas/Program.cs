@@ -17,6 +17,8 @@ using RentasCortas.Common.Notifications;
 using RentasCortas.Common.Background;
 using RentasCortas.Features.Dashboard;
 using RentasCortas.Features.Reportes;
+using RentasCortas.Common.Responses;
+using Microsoft.AspNetCore.Mvc;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -63,7 +65,23 @@ builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<IReportesService, ReportesService>();
 
 // --- Controllers ---
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .ConfigureApiBehaviorOptions(options =>
+    {
+        options.InvalidModelStateResponseFactory = context =>
+        {
+            var errors = context.ModelState
+                .Where(e => e.Value?.Errors.Count > 0)
+                .SelectMany(e => e.Value!.Errors.Select(err => err.ErrorMessage))
+                .ToList();
+
+            var message = errors.Count > 0
+                ? string.Join(" | ", errors)
+                : "Datos de entrada inválidos";
+
+            return new BadRequestObjectResult(new ApiResponse(message, 400));
+        };
+    });
 builder.Services.AddOpenApi(options =>
 {
     options.AddDocumentTransformer((document, context, cancellationToken) =>

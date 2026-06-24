@@ -5,8 +5,7 @@ using RentasCortas.Models;
 
 namespace RentasCortas.Features.Inmuebles;
 
-public class
-    InmueblesService : IInmueblesService
+public class InmueblesService : IInmueblesService
 {
     private static readonly string[] ValidStatuses = ["active", "inactive"];
 
@@ -37,7 +36,7 @@ public class
 
             return await GetByIdAsync(inmueble.Id, ownerId, "owner");
         }
-        catch (Exception ex) when (ex is not ArgumentException and not KeyNotFoundException)
+        catch (Exception ex) when (ex is not ArgumentException and not KeyNotFoundException and not UnauthorizedAccessException)
         {
             throw new InvalidOperationException("Error al crear el inmueble", ex);
         }
@@ -60,7 +59,7 @@ public class
 
             await _context.SaveChangesAsync();
 
-            return await GetByIdAsync(inmueble.Id, ownerId, "owner");
+            return MapToResponse(inmueble);
         }
         catch (Exception ex) when (ex is not ArgumentException and not KeyNotFoundException and not UnauthorizedAccessException)
         {
@@ -216,6 +215,8 @@ public class
     private async Task<Inmueble> GetOwnedInmuebleAsync(Guid ownerId, Guid inmuebleId)
     {
         var inmueble = await _context.Inmuebles
+            .Include(i => i.Owner)
+            .Include(i => i.Images)
             .FirstOrDefaultAsync(i => i.Id == inmuebleId)
             ?? throw new KeyNotFoundException($"El inmueble con id {inmuebleId} no existe");
 
