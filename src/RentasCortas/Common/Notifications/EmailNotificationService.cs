@@ -25,7 +25,9 @@ public class EmailNotificationService
 
         if (string.IsNullOrEmpty(host) || string.IsNullOrEmpty(fromEmail))
         {
-            _logger.LogWarning("SMTP no configurado. No se enviará el email a {ToEmail} con asunto: {Subject}", toEmail, subject);
+            _logger.LogWarning(
+                "SMTP no configurado (Host={Host}, FromEmail={FromEmail}). No se enviará el email a {ToEmail} con asunto: {Subject}",
+                host ?? "(vacío)", fromEmail ?? "(vacío)", toEmail, subject);
             return;
         }
 
@@ -34,6 +36,8 @@ public class EmailNotificationService
 
         try
         {
+            _logger.LogInformation("Intentando enviar email a {ToEmail} via {Host}:{Port}", toEmail, host, port);
+
             var message = new MimeMessage();
             message.From.Add(new MailboxAddress(fromName, fromEmail));
             message.To.Add(new MailboxAddress("", toEmail));
@@ -49,11 +53,11 @@ public class EmailNotificationService
             await client.SendAsync(message);
             await client.DisconnectAsync(true);
 
-            _logger.LogInformation("Email enviado a {ToEmail} con asunto: {Subject}", toEmail, subject);
+            _logger.LogInformation("Email enviado exitosamente a {ToEmail}", toEmail);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error al enviar email a {ToEmail}: {Message}", toEmail, ex.Message);
+            _logger.LogError(ex, "Error al enviar email a {ToEmail} via {Host}:{Port}: {Message}", toEmail, host, port, ex.Message);
         }
     }
 }
